@@ -15,17 +15,19 @@ interface Property {
   title: string;
   description: string;
   property_type: string;
-  price: number;
+  rent_price: number | null;
+  sale_price: number | null;
+  listing_mode: string;
   address: string;
   county: string;
+  town: string;
   bedrooms: number | null;
   bathrooms: number | null;
-  amenities: string[];
   furnished: boolean;
-  images: string[];
+  area_sqft: number | null;
   created_at: string;
   owner: {
-    full_name: string;
+    display_name: string;
     phone: string;
   };
 }
@@ -35,7 +37,7 @@ const Properties = () => {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     search: "",
-    listing_type: "",
+    listing_mode: "",
     property_type: "",
     min_price: "",
     max_price: "",
@@ -55,35 +57,38 @@ const Properties = () => {
         .from('properties')
         .select(`
           *,
-          owner:profiles!owner_id(full_name, phone)
+          owner:profiles!owner_id(display_name, phone)
         `)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
       // Apply filters
       if (filters.search) {
-        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%,address.ilike.%${filters.search}%`);
+        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%,address.ilike.%${filters.search}%,id.ilike.%${filters.search}%`);
       }
       if (filters.property_type) {
-        query = query.eq('property_type', filters.property_type);
+        query = query.eq('property_type', filters.property_type as any);
+      }
+      if (filters.listing_mode) {
+        query = query.eq('listing_mode', filters.listing_mode as any);
       }
       if (filters.min_price) {
-        query = query.gte('price', parseFloat(filters.min_price));
+        query = query.or(`rent_price.gte.${parseFloat(filters.min_price)},sale_price.gte.${parseFloat(filters.min_price)}`);
       }
       if (filters.max_price) {
-        query = query.lte('price', parseFloat(filters.max_price));
+        query = query.or(`rent_price.lte.${parseFloat(filters.max_price)},sale_price.lte.${parseFloat(filters.max_price)}`);
       }
       if (filters.bedrooms) {
         query = query.eq('bedrooms', parseInt(filters.bedrooms));
       }
       if (filters.location) {
-        query = query.ilike('location', `%${filters.location}%`);
+        query = query.or(`county.ilike.%${filters.location}%,town.ilike.%${filters.location}%,address.ilike.%${filters.location}%`);
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
-      setProperties(data || []);
+      setProperties((data as any) || []);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -95,15 +100,18 @@ const Properties = () => {
     }
   };
 
-  const formatPrice = (price: number, listingType: string) => {
+  const formatPrice = (property: Property) => {
     const formatter = new Intl.NumberFormat('en-KE', {
       style: 'currency',
       currency: 'KES',
       minimumFractionDigits: 0,
     });
     
+    const price = property.listing_mode === 'rent' ? property.rent_price : property.sale_price;
+    if (!price) return "Price on request";
+    
     const formattedPrice = formatter.format(price);
-    return listingType === 'rent' ? `${formattedPrice}/month` : formattedPrice;
+    return property.listing_mode === 'rent' ? `${formattedPrice}/month` : formattedPrice;
   };
 
   return (
@@ -118,14 +126,14 @@ const Properties = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search properties..."
+                  placeholder="Search properties or ID..."
                   value={filters.search}
                   onChange={(e) => setFilters({...filters, search: e.target.value})}
                   className="pl-9"
                 />
               </div>
               
-              <Select value={filters.listing_type} onValueChange={(value) => setFilters({...filters, listing_type: value})}>
+              <Select value={filters.listing_mode} onValueChange={(value) => setFilters({...filters, listing_mode: value})}>
                 <SelectTrigger>
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
@@ -143,11 +151,13 @@ const Properties = () => {
                 <SelectContent>
                   <SelectItem value="">All Properties</SelectItem>
                   <SelectItem value="apartment">Apartment</SelectItem>
-                  <SelectItem value="maisonette">Maisonette</SelectItem>
-                  <SelectItem value="bedsitter">Bedsitter</SelectItem>
-                  <SelectItem value="bungalow">Bungalow</SelectItem>
+                  <SelectItem value="house">House</SelectItem>
+                  <SelectItem value="studio">Studio</SelectItem>
                   <SelectItem value="villa">Villa</SelectItem>
+                  <SelectItem value="townhouse">Townhouse</SelectItem>
+                  <SelectItem value="bedsitter">Bedsitter</SelectItem>
                   <SelectItem value="land">Land</SelectItem>
+                  <SelectItem value="commercial">Commercial</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -224,20 +234,17 @@ const Properties = () => {
               {properties.map((property) => (
                 <Card key={property.id} className="overflow-hidden hover:shadow-medium transition-all duration-300 cursor-pointer">
                   <div className="relative h-48 bg-muted">
-                    {property.images?.[0] ? (
-                      <img
-                        src={property.images[0]}
-                        alt={property.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Home className="h-16 w-16 text-muted-foreground" />
-                      </div>
-                    )}
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Home className="h-16 w-16 text-muted-foreground" />
+                    </div>
                     <div className="absolute top-3 right-3">
-                      <Badge variant={property.listing_type === 'rent' ? 'default' : 'secondary'}>
-                        {property.listing_type === 'rent' ? 'For Rent' : 'For Sale'}
+                      <Badge variant={property.listing_mode === 'rent' ? 'default' : 'secondary'}>
+                        {property.listing_mode === 'rent' ? 'For Rent' : 'For Sale'}
+                      </Badge>
+                    </div>
+                    <div className="absolute top-3 left-3">
+                      <Badge variant="outline" className="bg-background/80 text-xs">
+                        #{property.id.slice(-8)}
                       </Badge>
                     </div>
                   </div>
@@ -247,7 +254,7 @@ const Properties = () => {
                       <h3 className="font-semibold text-foreground line-clamp-1">{property.title}</h3>
                       <div className="flex items-center text-muted-foreground text-sm mt-1">
                         <MapPin className="h-3 w-3 mr-1" />
-                        {property.location}
+                        {property.town}, {property.county}
                       </div>
                     </div>
                     
@@ -269,13 +276,18 @@ const Properties = () => {
                             {property.bathrooms}
                           </div>
                         )}
+                        {property.area_sqft && (
+                          <div className="text-xs">
+                            {property.area_sqft} sqft
+                          </div>
+                        )}
                       </div>
                       <Badge variant="outline">{property.property_type}</Badge>
                     </div>
                     
                     <div className="flex items-center justify-between">
                       <div className="text-lg font-bold text-primary">
-                        {formatPrice(property.price, property.listing_type)}
+                        {formatPrice(property)}
                       </div>
                       <Button size="sm" variant="outline">
                         View Details
