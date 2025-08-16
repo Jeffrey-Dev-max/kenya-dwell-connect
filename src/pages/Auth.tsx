@@ -79,7 +79,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: `${window.location.origin}/`
         }
       });
 
@@ -88,6 +88,44 @@ const Auth = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to sign in with Google",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'facebook',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Error", 
+        description: error.message || "Failed to sign in with Facebook",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sign in with Apple", 
         variant: "destructive",
       });
     }
@@ -236,13 +274,29 @@ const Auth = () => {
                 </span>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              className="w-full mt-4"
-              onClick={handleGoogleSignIn}
-            >
-              Continue with Google
-            </Button>
+            <div className="space-y-3">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={handleGoogleSignIn}
+              >
+                Continue with Google
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={handleFacebookSignIn}
+              >
+                Continue with Facebook
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={handleAppleSignIn}
+              >
+                Continue with Apple
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

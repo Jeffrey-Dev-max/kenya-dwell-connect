@@ -26,14 +26,22 @@ interface Property {
   furnished: boolean;
   area_sqft: number | null;
   created_at: string;
+  property_amenities: { amenities: { name: string } }[];
+  property_media: { url: string; sort_order: number }[];
   owner: {
     display_name: string;
     phone: string;
   };
 }
 
+interface Amenity {
+  id: string;
+  name: string;
+}
+
 const Properties = () => {
   const [properties, setProperties] = useState<Property[]>([]);
+  const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     search: "",
@@ -42,7 +50,11 @@ const Properties = () => {
     min_price: "",
     max_price: "",
     bedrooms: "",
-    location: ""
+    bathrooms: "",
+    min_sqft: "",
+    max_sqft: "",
+    location: "",
+    amenities: [] as string[]
   });
   const { toast } = useToast();
 
