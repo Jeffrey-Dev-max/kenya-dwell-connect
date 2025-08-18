@@ -102,13 +102,13 @@ const CreateListing = () => {
         const fileName = `${user?.id}/${Date.now()}-${i}.${fileExt}`;
 
         const { data, error } = await supabase.storage
-          .from('property-images')
+          .from('property-media')
           .upload(fileName, file);
 
         if (error) throw error;
 
         const { data: { publicUrl } } = supabase.storage
-          .from('property-images')
+          .from('property-media')
           .getPublicUrl(fileName);
 
         uploadedUrls.push(publicUrl);
@@ -157,37 +157,86 @@ const CreateListing = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-listing', {
-        body: formData
+      // Map amenity IDs to proper format for database
+      const propertyData = {
+        title: formData.title,
+        description: formData.description,
+        property_type: formData.property_type as any,
+        listing_mode: formData.listing_type as any,
+        rent_price: formData.listing_type === 'rent' ? parseFloat(formData.price) : null,
+        sale_price: formData.listing_type === 'sale' ? parseFloat(formData.price) : null,
+        county: formData.location.split(',')[1]?.trim() || formData.location,
+        town: formData.location.split(',')[0]?.trim() || formData.location,
+        address: formData.location,
+        bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
+        bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
+        furnished: formData.furnished,
+        owner_id: user.id,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : null
+      };
+
+      // Create property
+      const { data: property, error: propertyError } = await supabase
+        .from('properties')
+        .insert(propertyData)
+        .select()
+        .single();
+
+      if (propertyError) throw propertyError;
+
+      // Add amenities
+      if (formData.amenities.length > 0) {
+        const amenityInserts = formData.amenities.map(amenityId => ({
+          property_id: property.id,
+          amenity_id: amenityId
+        }));
+
+        const { error: amenityError } = await supabase
+          .from('property_amenities')
+          .insert(amenityInserts);
+
+        if (amenityError) throw amenityError;
+      }
+
+      // Add images
+      if (formData.images.length > 0) {
+        const mediaInserts = formData.images.map((url, index) => ({
+          property_id: property.id,
+          url: url,
+          media_type: 'image' as 'image',
+          sort_order: index
+        }));
+
+        const { error: mediaError } = await supabase
+          .from('property_media')
+          .insert(mediaInserts);
+
+        if (mediaError) throw mediaError;
+      }
+
+      toast({
+        title: "Success!",
+        description: "Your listing has been created successfully.",
+      });
+      
+      // Reset form
+      setFormData({
+        title: "",
+        description: "",
+        listing_type: "",
+        property_type: "",
+        price: "",
+        location: "",
+        latitude: "",
+        longitude: "",
+        bedrooms: "",
+        bathrooms: "",
+        amenities: [],
+        furnished: false,
+        images: []
       });
 
-      if (error) throw error;
-
-      if (data.requires_payment) {
-        setShowPaymentDialog(true);
-        setPaymentData(prev => ({ ...prev, listing_id: data.listing.id }));
-      } else {
-        toast({
-          title: "Success!",
-          description: "Your listing has been created and is now live.",
-        });
-        // Reset form or redirect
-        setFormData({
-          title: "",
-          description: "",
-          listing_type: "",
-          property_type: "",
-          price: "",
-          location: "",
-          latitude: "",
-          longitude: "",
-          bedrooms: "",
-          bathrooms: "",
-          amenities: [],
-          furnished: false,
-          images: []
-        });
-      }
     } catch (error: any) {
       toast({
         title: "Error",

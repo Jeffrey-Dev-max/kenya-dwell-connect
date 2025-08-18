@@ -1,5 +1,10 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Search, MapPin, Home, DollarSign } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Search, MapPin, Home, Shield, Star } from "lucide-react";
+import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-kenya-housing.jpg";
 
 const HeroSection = () => {
@@ -94,31 +99,46 @@ const HeroSection = () => {
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-accent">1,200+</div>
-              <div className="text-white/80">Properties Listed</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-accent">47</div>
-              <div className="text-white/80">Counties Covered</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-accent">5,000+</div>
-              <div className="text-white/80">Happy Clients</div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+            <Card className="bg-white/10 border-white/20 backdrop-blur-sm">
+              <CardContent className="p-6 text-center">
+                <Home className="h-8 w-8 text-white mx-auto mb-2" />
+                <div className="text-2xl font-bold text-white">{stats.totalProperties.toLocaleString()}+</div>
+                <div className="text-white/80 text-sm">Properties Listed</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-white/10 border-white/20 backdrop-blur-sm">
+              <CardContent className="p-6 text-center">
+                <Shield className="h-8 w-8 text-white mx-auto mb-2" />
+                <div className="text-2xl font-bold text-white">{stats.activeListings.toLocaleString()}</div>
+                <div className="text-white/80 text-sm">Active Listings</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-white/10 border-white/20 backdrop-blur-sm">
+              <CardContent className="p-6 text-center">
+                <Star className="h-8 w-8 text-white mx-auto mb-2" />
+                <div className="text-2xl font-bold text-white">{stats.satisfiedClients.toLocaleString()}+</div>
+                <div className="text-white/80 text-sm">Satisfied Clients</div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30 backdrop-blur-sm">
-              <Home className="h-5 w-5 mr-2" />
-              Browse Properties
-            </Button>
-            <Button size="lg" variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30 backdrop-blur-sm">
-              <DollarSign className="h-5 w-5 mr-2" />
-              List Your Property
-            </Button>
+            <Link to="/properties">
+              <Button size="lg" variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30 backdrop-blur-sm">
+                <Home className="h-5 w-5 mr-2" />
+                Browse Properties
+              </Button>
+            </Link>
+            <Link to="/create-listing">
+              <Button size="lg" variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30 backdrop-blur-sm">
+                <Star className="h-5 w-5 mr-2" />
+                List Your Property
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

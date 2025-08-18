@@ -1,229 +1,114 @@
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import Navigation from '@/components/Navigation';
-import Footer from '@/components/Footer';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Users, 
   Home, 
-  DollarSign, 
-  AlertTriangle,
-  Ban,
-  Settings,
-  TrendingUp,
-  Eye,
-  Trash2
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-interface AdminStats {
-  totalUsers: number;
-  totalProperties: number;
-  totalRevenue: number;
-  totalTransactions: number;
-  pendingListings: number;
-  bannedUsers: number;
-}
+  MessageSquare, 
+  TrendingUp, 
+  DollarSign,
+  MapPin,
+  Calendar,
+  Shield
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
+import { useAuth } from "@/hooks/useAuth";
 
 const AdminDashboard = () => {
   const { user, userRole } = useAuth();
-  const { toast } = useToast();
-  const [stats, setStats] = useState<AdminStats>({
+  const [stats, setStats] = useState({
     totalUsers: 0,
     totalProperties: 0,
-    totalRevenue: 0,
+    activeListings: 0,
     totalTransactions: 0,
-    pendingListings: 0,
-    bannedUsers: 0
+    totalRevenue: 0
   });
-  const [users, setUsers] = useState<any[]>([]);
-  const [properties, setProperties] = useState<any[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [banReason, setBanReason] = useState('');
-  const [listingFee, setListingFee] = useState('200');
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
-    if (user && userRole === 'admin') {
-      fetchAdminData();
+    if (userRole === 'admin') {
+      fetchStats();
+      fetchRecentActivity();
     }
-  }, [user, userRole]);
+  }, [userRole]);
 
-  const fetchAdminData = async () => {
+  const fetchStats = async () => {
     try {
-      setLoading(true);
-      
-      // Use admin actions function to get analytics
-      const { data: analyticsData } = await supabase.functions.invoke('admin-actions', {
-        body: { action: 'get_analytics' }
+      // Fetch user count
+      const { count: userCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch property stats
+      const { data: properties } = await supabase
+        .from('properties')
+        .select('id, status, created_at');
+
+      // Fetch transaction stats
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('amount_kes, status');
+
+      const activeListings = properties?.filter(p => p.status === 'active').length || 0;
+      const completedTransactions = transactions?.filter(t => t.status === 'success') || [];
+      const totalRevenue = completedTransactions.reduce((sum, t) => sum + (t.amount_kes || 0), 0);
+
+      setStats({
+        totalUsers: userCount || 0,
+        totalProperties: properties?.length || 0,
+        activeListings,
+        totalTransactions: transactions?.length || 0,
+        totalRevenue
       });
 
-      if (analyticsData) {
-        setStats({
-          totalUsers: analyticsData.total_users,
-          totalProperties: analyticsData.total_properties,
-          totalRevenue: analyticsData.total_revenue,
-          totalTransactions: analyticsData.total_transactions,
-          pendingListings: 0,
-          bannedUsers: 0
-        });
-      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch dashboard stats",
+        variant: "destructive",
+      });
+    }
+  };
 
-      // Fetch recent users
-      const { data: usersData } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      // Fetch recent properties
-      const { data: propertiesData } = await supabase
+  const fetchRecentActivity = async () => {
+    try {
+      // Get recent properties
+      const { data: recentProperties } = await supabase
         .from('properties')
         .select(`
           *,
-          owner:profiles!owner_id(display_name)
+          profiles!owner_id(full_name)
         `)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(5);
 
-      // Fetch recent transactions
-      const { data: transactionsData } = await supabase
-        .from('transactions')
-        .select(`
-          *,
-          user:profiles!user_id(display_name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      setUsers(usersData || []);
-      setProperties(propertiesData || []);
-      setTransactions(transactionsData || []);
-
+      setRecentActivity(recentProperties || []);
     } catch (error) {
-      console.error('Error fetching admin data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch admin data",
-        variant: "destructive",
-      });
+      console.error('Error fetching recent activity:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBanUser = async () => {
-    if (!selectedUser || !banReason) return;
-
-    try {
-      const { error } = await supabase.functions.invoke('admin-actions', {
-        body: {
-          action: 'ban_user',
-          data: {
-            user_id: selectedUser.id,
-            phone_number: selectedUser.phone,
-            reason: banReason
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "User banned successfully",
-      });
-
-      setBanReason('');
-      setSelectedUser(null);
-      fetchAdminData();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to ban user",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUpdateListingFee = async () => {
-    try {
-      const { error } = await supabase.functions.invoke('admin-actions', {
-        body: {
-          action: 'update_listing_fee',
-          data: { new_fee: listingFee }
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Listing fee updated successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update listing fee",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleRemoveListing = async (listingId: string, reason: string) => {
-    try {
-      const { error } = await supabase.functions.invoke('admin-actions', {
-        body: {
-          action: 'remove_listing',
-          data: {
-            listing_id: listingId,
-            removal_reason: reason
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Listing removed successfully",
-      });
-
-      fetchAdminData();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to remove listing",
-        variant: "destructive",
-      });
-    }
-  };
-
   if (userRole !== 'admin') {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <AlertTriangle className="h-16 w-16 text-destructive mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground mb-2">Access Denied</h1>
-          <p className="text-muted-foreground">You don't have permission to access this page.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
         <div className="pt-20 pb-16 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Access Denied</CardTitle>
+              <CardDescription>You don't have permission to access this page.</CardDescription>
+            </CardHeader>
+          </Card>
         </div>
         <Footer />
       </div>
@@ -236,68 +121,21 @@ const AdminDashboard = () => {
       
       <main className="pt-20 pb-16">
         <div className="container mx-auto px-4">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-              <p className="text-muted-foreground mt-1">Manage platform operations and settings</p>
-            </div>
-            <div className="flex gap-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Settings
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Platform Settings</DialogTitle>
-                    <DialogDescription>
-                      Configure platform-wide settings
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium">Listing Fee (KES)</label>
-                      <Input
-                        type="number"
-                        value={listingFee}
-                        onChange={(e) => setListingFee(e.target.value)}
-                        placeholder="200"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={handleUpdateListingFee}>Update Settings</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
+            <p className="text-muted-foreground">Manage and monitor your platform</p>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-                    <p className="text-2xl font-bold text-foreground">{stats.totalUsers}</p>
+                    <p className="text-2xl font-bold">{stats.totalUsers}</p>
                   </div>
-                  <Users className="h-8 w-8 text-primary" />
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Properties</p>
-                    <p className="text-2xl font-bold text-foreground">{stats.totalProperties}</p>
-                  </div>
-                  <Home className="h-8 w-8 text-primary" />
+                  <Users className="h-8 w-8 text-blue-500" />
                 </div>
               </CardContent>
             </Card>
@@ -306,12 +144,22 @@ const AdminDashboard = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                    <p className="text-2xl font-bold text-foreground">
-                      KES {stats.totalRevenue.toLocaleString()}
-                    </p>
+                    <p className="text-sm font-medium text-muted-foreground">Total Properties</p>
+                    <p className="text-2xl font-bold">{stats.totalProperties}</p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-primary" />
+                  <Home className="h-8 w-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Active Listings</p>
+                    <p className="text-2xl font-bold">{stats.activeListings}</p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-purple-500" />
                 </div>
               </CardContent>
             </Card>
@@ -321,110 +169,96 @@ const AdminDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Transactions</p>
-                    <p className="text-2xl font-bold text-foreground">{stats.totalTransactions}</p>
+                    <p className="text-2xl font-bold">{stats.totalTransactions}</p>
                   </div>
-                  <TrendingUp className="h-8 w-8 text-primary" />
+                  <Shield className="h-8 w-8 text-orange-500" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Revenue (KES)</p>
+                    <p className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()}</p>
+                  </div>
+                  <DollarSign className="h-8 w-8 text-green-600" />
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Management Sections */}
+          {/* Recent Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Recent Users */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Recent Users
-                </CardTitle>
-                <CardDescription>
-                  Manage user accounts and permissions
-                </CardDescription>
+                <CardTitle>Recent Properties</CardTitle>
+                <CardDescription>Latest property listings</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {users.slice(0, 5).map((user, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {user.display_name || 'Unnamed User'}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {user.phone || 'No phone'}
-                        </p>
+                {loading ? (
+                  <div className="space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                        <div className="h-3 bg-muted rounded w-1/2"></div>
                       </div>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setSelectedUser(user)}
-                          >
-                            <Ban className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Ban User</DialogTitle>
-                            <DialogDescription>
-                              Provide a reason for banning this user
-                            </DialogDescription>
-                          </DialogHeader>
-                          <Textarea
-                            placeholder="Enter ban reason..."
-                            value={banReason}
-                            onChange={(e) => setBanReason(e.target.value)}
-                          />
-                          <DialogFooter>
-                            <Button variant="destructive" onClick={handleBanUser}>
-                              Ban User
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : recentActivity.length === 0 ? (
+                  <p className="text-muted-foreground">No recent activity</p>
+                ) : (
+                  <div className="space-y-4">
+                    {recentActivity.map((property) => (
+                      <div key={property.id} className="flex items-start justify-between border-b pb-3 last:border-b-0">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm">{property.title}</h4>
+                          <div className="flex items-center text-xs text-muted-foreground mt-1">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {property.town}, {property.county}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            by {property.profiles?.full_name || 'Unknown'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant={property.status === 'active' ? 'default' : 'secondary'}>
+                            {property.status}
+                          </Badge>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(property.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Recent Properties */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Home className="h-5 w-5" />
-                  Recent Properties
-                </CardTitle>
-                <CardDescription>
-                  Monitor and manage property listings
-                </CardDescription>
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>Common administrative tasks</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {properties.slice(0, 5).map((property, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium text-foreground">{property.title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {property.town}, {property.county}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Badge variant={property.status === 'active' ? 'default' : 'secondary'}>
-                          {property.status}
-                        </Badge>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleRemoveListing(property.id, 'Admin review')}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <CardContent className="space-y-4">
+                <Button className="w-full justify-start" variant="outline">
+                  <Users className="h-4 w-4 mr-2" />
+                  Manage Users
+                </Button>
+                <Button className="w-full justify-start" variant="outline">
+                  <Home className="h-4 w-4 mr-2" />
+                  Review Properties
+                </Button>
+                <Button className="w-full justify-start" variant="outline">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  View Messages
+                </Button>
+                <Button className="w-full justify-start" variant="outline">
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Analytics
+                </Button>
               </CardContent>
             </Card>
           </div>

@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
+import { PropertyCard } from "@/components/PropertyCard";
 
 interface Property {
   id: string;
@@ -26,6 +27,7 @@ interface Property {
   furnished: boolean;
   area_sqft: number | null;
   created_at: string;
+  currency: string;
   property_amenities: { amenities: { name: string } }[];
   property_media: { url: string; sort_order: number }[];
   owner: {
@@ -71,7 +73,7 @@ const Properties = () => {
         .order('name');
       
       if (!error && data) {
-        setAvailableAmenities(data);
+        setAmenities(data);
       }
     } catch (error) {
       console.error('Error fetching amenities:', error);
@@ -260,69 +262,11 @@ const Properties = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {properties.map((property) => (
-                <Card key={property.id} className="overflow-hidden hover:shadow-medium transition-all duration-300 cursor-pointer">
-                  <div className="relative h-48 bg-muted">
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Home className="h-16 w-16 text-muted-foreground" />
-                    </div>
-                    <div className="absolute top-3 right-3">
-                      <Badge variant={property.listing_mode === 'rent' ? 'default' : 'secondary'}>
-                        {property.listing_mode === 'rent' ? 'For Rent' : 'For Sale'}
-                      </Badge>
-                    </div>
-                    <div className="absolute top-3 left-3">
-                      <Badge variant="outline" className="bg-background/80 text-xs">
-                        #{property.id.slice(-8)}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <CardContent className="p-4">
-                    <div className="mb-2">
-                      <h3 className="font-semibold text-foreground line-clamp-1">{property.title}</h3>
-                      <div className="flex items-center text-muted-foreground text-sm mt-1">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        {property.town}, {property.county}
-                      </div>
-                    </div>
-                    
-                    <p className="text-muted-foreground text-sm line-clamp-2 mb-3">
-                      {property.description}
-                    </p>
-                    
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3 text-sm text-muted-foreground">
-                        {property.bedrooms && (
-                          <div className="flex items-center">
-                            <Bed className="h-3 w-3 mr-1" />
-                            {property.bedrooms}
-                          </div>
-                        )}
-                        {property.bathrooms && (
-                          <div className="flex items-center">
-                            <Bath className="h-3 w-3 mr-1" />
-                            {property.bathrooms}
-                          </div>
-                        )}
-                        {property.area_sqft && (
-                          <div className="text-xs">
-                            {property.area_sqft} sqft
-                          </div>
-                        )}
-                      </div>
-                      <Badge variant="outline">{property.property_type}</Badge>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="text-lg font-bold text-primary">
-                        {formatPrice(property)}
-                      </div>
-                      <Button size="sm" variant="outline">
-                        View Details
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <PropertyCard 
+                  key={property.id} 
+                  property={property} 
+                  onClick={() => console.log('Property clicked:', property.id)} 
+                />
               ))}
             </div>
           )}
