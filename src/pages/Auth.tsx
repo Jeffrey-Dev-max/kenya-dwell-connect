@@ -26,8 +26,19 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('auth-signup', {
-        body: formData
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: formData.full_name,
+            phone_number: formData.phone,
+            role: formData.role
+          }
+        }
       });
 
       if (error) throw error;

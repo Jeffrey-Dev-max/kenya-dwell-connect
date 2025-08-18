@@ -53,15 +53,27 @@ const CreateListing = () => {
   const [uploadingImages, setUploadingImages] = useState(false);
   const { toast } = useToast();
 
-  const availableAmenities = [
-    "WiFi", "Parking", "Swimming Pool", "Gym", "Security", "Garden",
-    "Balcony", "Air Conditioning", "Heating", "Kitchen", "Laundry",
-    "Elevator", "Backup Generator", "Water Tank", "CCTV"
-  ];
+  const [availableAmenities, setAvailableAmenities] = useState<any[]>([]);
 
   useEffect(() => {
     checkUser();
+    fetchAmenities();
   }, []);
+
+  const fetchAmenities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('amenities')
+        .select('*')
+        .order('name');
+      
+      if (!error && data) {
+        setAvailableAmenities(data);
+      }
+    } catch (error) {
+      console.error('Error fetching amenities:', error);
+    }
+  };
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -129,12 +141,12 @@ const CreateListing = () => {
     }));
   };
 
-  const toggleAmenity = (amenity: string) => {
+  const toggleAmenity = (amenityId: string) => {
     setFormData(prev => ({
       ...prev,
-      amenities: prev.amenities.includes(amenity)
-        ? prev.amenities.filter(a => a !== amenity)
-        : [...prev.amenities, amenity]
+      amenities: prev.amenities.includes(amenityId)
+        ? prev.amenities.filter(a => a !== amenityId)
+        : [...prev.amenities, amenityId]
     }));
   };
 
@@ -396,23 +408,26 @@ const CreateListing = () => {
                   <h3 className="text-lg font-semibold">Amenities</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {availableAmenities.map((amenity) => (
-                      <div key={amenity} className="flex items-center space-x-2">
+                      <div key={amenity.id} className="flex items-center space-x-2">
                         <Checkbox
-                          id={amenity}
-                          checked={formData.amenities.includes(amenity)}
-                          onCheckedChange={() => toggleAmenity(amenity)}
+                          id={amenity.id}
+                          checked={formData.amenities.includes(amenity.id)}
+                          onCheckedChange={() => toggleAmenity(amenity.id)}
                         />
-                        <Label htmlFor={amenity} className="text-sm">{amenity}</Label>
+                        <Label htmlFor={amenity.id} className="text-sm">{amenity.name}</Label>
                       </div>
                     ))}
                   </div>
                   {formData.amenities.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-3">
-                      {formData.amenities.map((amenity) => (
-                        <Badge key={amenity} variant="secondary">
-                          {amenity}
-                        </Badge>
-                      ))}
+                      {formData.amenities.map((amenityId) => {
+                        const amenity = availableAmenities.find(a => a.id === amenityId);
+                        return (
+                          <Badge key={amenityId} variant="secondary">
+                            {amenity?.name}
+                          </Badge>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

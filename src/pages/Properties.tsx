@@ -60,7 +60,23 @@ const Properties = () => {
 
   useEffect(() => {
     fetchProperties();
+    fetchAmenities();
   }, [filters]);
+
+  const fetchAmenities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('amenities')
+        .select('*')
+        .order('name');
+      
+      if (!error && data) {
+        setAvailableAmenities(data);
+      }
+    } catch (error) {
+      console.error('Error fetching amenities:', error);
+    }
+  };
 
   const fetchProperties = async () => {
     try {

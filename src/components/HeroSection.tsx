@@ -3,6 +3,34 @@ import { Search, MapPin, Home, DollarSign } from "lucide-react";
 import heroImage from "@/assets/hero-kenya-housing.jpg";
 
 const HeroSection = () => {
+  const [stats, setStats] = useState({
+    totalProperties: 0,
+    activeListings: 0,
+    satisfiedClients: 0
+  });
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const { data: properties, error } = await supabase
+        .from('properties')
+        .select('id, status')
+        .eq('status', 'active');
+
+      if (!error && properties) {
+        setStats({
+          totalProperties: properties.length,
+          activeListings: properties.length,
+          satisfiedClients: Math.floor(properties.length * 0.8) // Estimated
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
