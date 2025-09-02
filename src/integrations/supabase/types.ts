@@ -305,6 +305,33 @@ export type Database = {
           },
         ]
       }
+      listing_allowances: {
+        Row: {
+          created_at: string
+          free_listings: number
+          id: string
+          updated_at: string
+          used_listings: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          free_listings?: number
+          id?: string
+          updated_at?: string
+          used_listings?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          free_listings?: number
+          id?: string
+          updated_at?: string
+          used_listings?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string

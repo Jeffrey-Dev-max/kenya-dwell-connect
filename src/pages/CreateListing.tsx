@@ -49,7 +49,7 @@ const CreateListing = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [paymentData, setPaymentData] = useState({ phone: "", amount: 200 });
+  const [paymentData, setPaymentData] = useState({ phone: "", amount: 200, listing_id: "" });
   const [uploadingImages, setUploadingImages] = useState(false);
   const { toast } = useToast();
 
@@ -157,86 +157,37 @@ const CreateListing = () => {
     setIsLoading(true);
 
     try {
-      // Map amenity IDs to proper format for database
-      const propertyData = {
-        title: formData.title,
-        description: formData.description,
-        property_type: formData.property_type as any,
-        listing_mode: formData.listing_type as any,
-        rent_price: formData.listing_type === 'rent' ? parseFloat(formData.price) : null,
-        sale_price: formData.listing_type === 'sale' ? parseFloat(formData.price) : null,
-        county: formData.location.split(',')[1]?.trim() || formData.location,
-        town: formData.location.split(',')[0]?.trim() || formData.location,
-        address: formData.location,
-        bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
-        bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
-        furnished: formData.furnished,
-        owner_id: user.id,
-        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : null
-      };
-
-      // Create property
-      const { data: property, error: propertyError } = await supabase
-        .from('properties')
-        .insert(propertyData)
-        .select()
-        .single();
-
-      if (propertyError) throw propertyError;
-
-      // Add amenities
-      if (formData.amenities.length > 0) {
-        const amenityInserts = formData.amenities.map(amenityId => ({
-          property_id: property.id,
-          amenity_id: amenityId
-        }));
-
-        const { error: amenityError } = await supabase
-          .from('property_amenities')
-          .insert(amenityInserts);
-
-        if (amenityError) throw amenityError;
-      }
-
-      // Add images
-      if (formData.images.length > 0) {
-        const mediaInserts = formData.images.map((url, index) => ({
-          property_id: property.id,
-          url: url,
-          media_type: 'image' as 'image',
-          sort_order: index
-        }));
-
-        const { error: mediaError } = await supabase
-          .from('property_media')
-          .insert(mediaInserts);
-
-        if (mediaError) throw mediaError;
-      }
-
-      toast({
-        title: "Success!",
-        description: "Your listing has been created successfully.",
-      });
-      
-      // Reset form
-      setFormData({
-        title: "",
-        description: "",
-        listing_type: "",
-        property_type: "",
-        price: "",
-        location: "",
-        latitude: "",
-        longitude: "",
-        bedrooms: "",
-        bathrooms: "",
-        amenities: [],
-        furnished: false,
-        images: []
+      const { data, error } = await supabase.functions.invoke('create-listing', {
+        body: formData
       });
 
+      if (error) throw error;
+
+      if (data.requires_payment) {
+        setShowPaymentDialog(true);
+        setPaymentData(prev => ({ ...prev, listing_id: data.property.id }));
+      } else {
+        toast({
+          title: "Success!",
+          description: "Your listing has been created and is now live.",
+        });
+        // Reset form
+        setFormData({
+          title: "",
+          description: "",
+          listing_type: "",
+          property_type: "",
+          price: "",
+          location: "",
+          latitude: "",
+          longitude: "",
+          bedrooms: "",
+          bathrooms: "",
+          amenities: [],
+          furnished: false,
+          images: []
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -256,18 +207,40 @@ const CreateListing = () => {
         body: {
           phone_number: paymentData.phone,
           amount: paymentData.amount,
-          user_id: user?.id
+          user_id: user?.id,
+          listing_id: paymentData.listing_id
         }
       });
 
       if (error) throw error;
 
-      toast({
-        title: "Payment Request Sent",
-        description: "Please complete the payment on your phone.",
-      });
-      
-      setShowPaymentDialog(false);
+      if (data.success) {
+        toast({
+          title: "Payment Request Sent",
+          description: "Please complete the payment on your phone.",
+        });
+        
+        setShowPaymentDialog(false);
+        
+        // Reset form after successful payment initiation
+        setFormData({
+          title: "",
+          description: "",
+          listing_type: "",
+          property_type: "",
+          price: "",
+          location: "",
+          latitude: "",
+          longitude: "",
+          bedrooms: "",
+          bathrooms: "",
+          amenities: [],
+          furnished: false,
+          images: []
+        });
+      } else {
+        throw new Error(data.error || 'Payment failed');
+      }
     } catch (error: any) {
       toast({
         title: "Payment Error",
@@ -568,9 +541,15 @@ const CreateListing = () => {
               <span>Listing Fee:</span>
               <span className="font-semibold">KES {paymentData.amount}</span>
             </div>
-            <Button onClick={handlePayment} className="w-full" disabled={isLoading}>
-              {isLoading ? "Processing..." : "Pay with M-Pesa"}
-            </Button>
+            <div className="space-y-3">
+              <Button
+                onClick={handlePayment}
+                disabled={!paymentData.phone || isLoading}
+                className="w-full"
+              >
+                {isLoading ? "Processing..." : `Pay KES ${paymentData.amount}`}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -7,158 +7,144 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get user from auth header
-    const authHeader = req.headers.get('authorization')
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    )
-
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
-    
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const {
-      title,
-      description,
-      listing_type,
-      property_type,
-      price,
-      location,
-      latitude,
-      longitude,
-      bedrooms,
-      bathrooms,
-      amenities,
-      furnished,
-      images
-    } = await req.json()
-
-    // Validate required fields
-    if (!title || !description || !listing_type || !property_type || !price || !location) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Use service role for database operations
-    const serviceClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Check user profile and permissions
-    const { data: profile, error: profileError } = await serviceClient
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single()
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization')!
+    const token = authHeader.replace('Bearer ', '')
+    const { data: userData } = await supabaseClient.auth.getUser(token)
+    const user = userData.user
 
-    if (profileError || !profile) {
+    if (!user) {
       return new Response(
-        JSON.stringify({ error: 'Profile not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'User not authenticated' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
       )
     }
 
-    // Check if user can post listings
-    if (profile.role === 'tenant') {
-      return new Response(
-        JSON.stringify({ error: 'Tenants cannot create listings' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    const formData = await req.json()
 
-    // Check listing allowance
-    const { data: allowance, error: allowanceError } = await serviceClient
+    // Check user's listing allowances
+    const { data: allowances } = await supabaseClient
       .from('listing_allowances')
       .select('*')
       .eq('user_id', user.id)
       .single()
 
     let requiresPayment = false
-    let listingStatus = 'active'
-
-    if (!allowanceError && allowance && allowance.remaining_free_listings > 0) {
-      // Use free listing
-      await serviceClient
-        .from('listing_allowances')
-        .update({
-          remaining_free_listings: allowance.remaining_free_listings - 1,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id)
-    } else {
-      // Requires payment
+    
+    if (allowances && allowances.used_listings >= allowances.free_listings) {
       requiresPayment = true
-      listingStatus = 'pending_payment'
     }
 
-    // Create listing
-    const { data: listing, error: listingError } = await serviceClient
+    // Prepare property data
+    const propertyData = {
+      title: formData.title,
+      description: formData.description,
+      property_type: formData.property_type,
+      listing_mode: formData.listing_type,
+      rent_price: formData.listing_type === 'rent' ? parseFloat(formData.price) : null,
+      sale_price: formData.listing_type === 'sale' ? parseFloat(formData.price) : null,
+      county: formData.location.split(',')[1]?.trim() || formData.location,
+      town: formData.location.split(',')[0]?.trim() || formData.location,
+      address: formData.location,
+      bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
+      bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
+      furnished: formData.furnished,
+      owner_id: user.id,
+      latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+      longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+      status: requiresPayment ? 'draft' : 'active'
+    }
+
+    // Create property
+    const { data: property, error: propertyError } = await supabaseClient
       .from('properties')
-      .insert({
-        owner_id: user.id,
-        title,
-        description,
-        listing_type: listing_type as 'rent' | 'sale',
-        property_type,
-        price: parseFloat(price),
-        location,
-        latitude: latitude ? parseFloat(latitude) : null,
-        longitude: longitude ? parseFloat(longitude) : null,
-        bedrooms: bedrooms ? parseInt(bedrooms) : null,
-        bathrooms: bathrooms ? parseInt(bathrooms) : null,
-        amenities: amenities || [],
-        furnished: furnished || false,
-        images: images || [],
-        status: listingStatus as 'active' | 'pending_payment',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
+      .insert(propertyData)
       .select()
       .single()
 
-    if (listingError) {
-      throw new Error(`Listing creation failed: ${listingError.message}`)
+    if (propertyError) {
+      throw propertyError
+    }
+
+    // Add amenities if provided
+    if (formData.amenities && formData.amenities.length > 0) {
+      const amenityInserts = formData.amenities.map((amenityId: string) => ({
+        property_id: property.id,
+        amenity_id: amenityId
+      }))
+
+      const { error: amenityError } = await supabaseClient
+        .from('property_amenities')
+        .insert(amenityInserts)
+
+      if (amenityError) {
+        console.error('Error adding amenities:', amenityError)
+      }
+    }
+
+    // Add images if provided
+    if (formData.images && formData.images.length > 0) {
+      const mediaInserts = formData.images.map((url: string, index: number) => ({
+        property_id: property.id,
+        url: url,
+        media_type: 'image',
+        sort_order: index
+      }))
+
+      const { error: mediaError } = await supabaseClient
+        .from('property_media')
+        .insert(mediaInserts)
+
+      if (mediaError) {
+        console.error('Error adding media:', mediaError)
+      }
+    }
+
+    // Update listing allowances if not requiring payment
+    if (!requiresPayment && allowances) {
+      await supabaseClient
+        .from('listing_allowances')
+        .update({ used_listings: allowances.used_listings + 1 })
+        .eq('user_id', user.id)
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        listing,
+        property: property,
         requires_payment: requiresPayment,
         message: requiresPayment 
-          ? 'Listing created but requires payment to activate' 
-          : 'Listing created successfully'
+          ? 'Property created as draft. Payment required to publish.'
+          : 'Property created and published successfully!'
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     )
 
   } catch (error) {
-    console.error('Create listing error:', error)
+    console.error('Error creating listing:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Failed to create listing' }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     )
   }
 })

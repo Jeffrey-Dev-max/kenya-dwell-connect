@@ -6,32 +6,38 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const generateAccessToken = async () => {
-  const consumerKey = Deno.env.get('MPESA_CONSUMER_KEY')
-  const consumerSecret = Deno.env.get('MPESA_CONSUMER_SECRET')
-  
-  const auth = btoa(`${consumerKey}:${consumerSecret}`)
+// M-Pesa API credentials - User needs to add these in Supabase secrets
+const MPESA_CONSUMER_KEY = Deno.env.get('MPESA_CONSUMER_KEY') || 'YOUR_CONSUMER_KEY'
+const MPESA_CONSUMER_SECRET = Deno.env.get('MPESA_CONSUMER_SECRET') || 'YOUR_CONSUMER_SECRET'
+const MPESA_BUSINESS_SHORT_CODE = Deno.env.get('MPESA_BUSINESS_SHORT_CODE') || '174379'
+const MPESA_PASSKEY = Deno.env.get('MPESA_PASSKEY') || 'YOUR_PASSKEY'
+const MPESA_CALLBACK_URL = Deno.env.get('MPESA_CALLBACK_URL') || 'https://plkwzhjthjopkkcllyjv.supabase.co/functions/v1/mpesa-callback'
+
+// Generate M-Pesa access token
+async function generateAccessToken(): Promise<string> {
+  const auth = btoa(`${MPESA_CONSUMER_KEY}:${MPESA_CONSUMER_SECRET}`)
   
   const response = await fetch('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials', {
     method: 'GET',
     headers: {
-      'Authorization': `Basic ${auth}`,
-    },
+      'Authorization': `Basic ${auth}`
+    }
   })
   
   const data = await response.json()
   return data.access_token
 }
 
-const generatePassword = (timestamp: string) => {
-  const businessShortCode = Deno.env.get('MPESA_BUSINESS_SHORT_CODE')
-  const passkey = Deno.env.get('MPESA_PASSKEY')
-  return btoa(`${businessShortCode}${passkey}${timestamp}`)
+// Generate M-Pesa password
+function generatePassword(timestamp: string): string {
+  const password = btoa(`${MPESA_BUSINESS_SHORT_CODE}${MPESA_PASSKEY}${timestamp}`)
+  return password
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -45,78 +51,80 @@ serve(async (req) => {
     if (!phone_number || !amount || !user_id) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
       )
     }
 
-    // Generate access token
+    // Generate access token and password
     const accessToken = await generateAccessToken()
-    
-    // Generate timestamp and password
-    const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)
+    const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3)
     const password = generatePassword(timestamp)
-    
+
     // Create transaction record first
     const { data: transaction, error: transactionError } = await supabaseClient
       .from('transactions')
       .insert({
-        user_id,
-        listing_id,
-        amount: parseFloat(amount),
-        phone_number,
-        transaction_type: 'listing_fee',
-        status: 'pending',
-        created_at: new Date().toISOString()
+        user_id: user_id,
+        property_id: listing_id,
+        amount_kes: amount,
+        purpose: 'listing_fee',
+        status: 'initiated'
       })
       .select()
       .single()
 
     if (transactionError) {
-      throw new Error(`Transaction creation failed: ${transactionError.message}`)
+      throw transactionError
     }
 
-    // Format phone number (remove + and ensure 254 prefix)
-    let formattedPhone = phone_number.replace(/\+/g, '')
+    // Format phone number to E.164 standard
+    let formattedPhone = phone_number.replace(/\s+/g, '')
     if (formattedPhone.startsWith('0')) {
       formattedPhone = '254' + formattedPhone.slice(1)
-    }
-    if (!formattedPhone.startsWith('254')) {
+    } else if (formattedPhone.startsWith('+254')) {
+      formattedPhone = formattedPhone.slice(1)
+    } else if (!formattedPhone.startsWith('254')) {
       formattedPhone = '254' + formattedPhone
     }
 
-    // STK Push request
+    // STK Push request payload
     const stkPushPayload = {
-      BusinessShortCode: Deno.env.get('MPESA_BUSINESS_SHORT_CODE'),
+      BusinessShortCode: MPESA_BUSINESS_SHORT_CODE,
       Password: password,
       Timestamp: timestamp,
       TransactionType: 'CustomerPayBillOnline',
       Amount: amount,
       PartyA: formattedPhone,
-      PartyB: Deno.env.get('MPESA_BUSINESS_SHORT_CODE'),
+      PartyB: MPESA_BUSINESS_SHORT_CODE,
       PhoneNumber: formattedPhone,
-      CallBackURL: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mpesa-callback`,
-      AccountReference: `LISTING-${transaction.id}`,
+      CallBackURL: MPESA_CALLBACK_URL,
+      AccountReference: `KDC-${transaction.id.slice(-8)}`,
       TransactionDesc: 'Kenya Dwell Connect Listing Fee'
     }
 
+    // Send STK Push request
     const stkResponse = await fetch('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(stkPushPayload)
     })
 
     const stkData = await stkResponse.json()
+    console.log('STK Push Response:', stkData)
 
     if (stkData.ResponseCode === '0') {
       // Update transaction with checkout request ID
       await supabaseClient
         .from('transactions')
         .update({
-          mpesa_checkout_request_id: stkData.CheckoutRequestID,
-          updated_at: new Date().toISOString()
+          raw_payload: stkData,
+          status: 'pending'
         })
         .eq('id', transaction.id)
 
@@ -127,17 +135,38 @@ serve(async (req) => {
           checkout_request_id: stkData.CheckoutRequestID,
           transaction_id: transaction.id
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
       )
     } else {
-      throw new Error(`STK Push failed: ${stkData.ResponseDescription}`)
+      // Update transaction status to failed
+      await supabaseClient
+        .from('transactions')
+        .update({ status: 'failed', raw_payload: stkData })
+        .eq('id', transaction.id)
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: stkData.errorMessage || 'STK push failed'
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
   } catch (error) {
-    console.error('STK Push error:', error)
+    console.error('Error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Internal server error' }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     )
   }
 })
