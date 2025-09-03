@@ -6,15 +6,16 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 interface ImageCarouselProps {
   images: string[];
   alt: string;
+  className?: string;
 }
 
-export const ImageCarousel = ({ images, alt }: ImageCarouselProps) => {
+export const ImageCarousel = ({ images, alt, className }: ImageCarouselProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   if (!images || images.length === 0) {
     return (
-      <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
+      <div className={`w-full h-64 bg-gradient-aurora/10 rounded-xl flex items-center justify-center ${className || ''}`}>
         <p className="text-muted-foreground">No images available</p>
       </div>
     );
@@ -46,11 +47,11 @@ export const ImageCarousel = ({ images, alt }: ImageCarouselProps) => {
 
   return (
     <>
-      <div className="relative w-full h-64 rounded-lg overflow-hidden group">
+      <div className={`relative w-full h-64 rounded-xl overflow-hidden group ${className || ''}`}>
         <img
           src={images[currentIndex]}
           alt={`${alt} - Image ${currentIndex + 1}`}
-          className="w-full h-full object-cover cursor-pointer"
+          className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105"
           onClick={openFullscreen}
         />
         
@@ -59,19 +60,19 @@ export const ImageCarousel = ({ images, alt }: ImageCarouselProps) => {
             <Button
               variant="ghost"
               size="sm"
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 glass-card opacity-0 group-hover:opacity-100 transition-all duration-300 hover-glow"
               onClick={goToPrevious}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4 text-white" />
             </Button>
             
             <Button
               variant="ghost"
               size="sm"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 glass-card opacity-0 group-hover:opacity-100 transition-all duration-300 hover-glow"
               onClick={goToNext}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4 text-white" />
             </Button>
           </>
         )}
@@ -79,19 +80,19 @@ export const ImageCarousel = ({ images, alt }: ImageCarouselProps) => {
         <Button
           variant="ghost"
           size="sm"
-          className="absolute top-2 right-2 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute top-3 right-3 glass-card opacity-0 group-hover:opacity-100 transition-all duration-300 hover-glow"
           onClick={openFullscreen}
         >
-          <Maximize2 className="h-4 w-4" />
+          <Maximize2 className="h-4 w-4 text-white" />
         </Button>
 
         {images.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex space-x-2">
             {images.map((_, index) => (
               <button
                 key={index}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  index === currentIndex ? 'bg-primary' : 'bg-background/50'
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                  index === currentIndex ? 'bg-primary shadow-glow' : 'bg-white/50 hover:bg-white/70'
                 }`}
                 onClick={() => goToSlide(index)}
               />
@@ -99,7 +100,7 @@ export const ImageCarousel = ({ images, alt }: ImageCarouselProps) => {
           </div>
         )}
 
-        <div className="absolute top-2 left-2 bg-background/80 px-2 py-1 rounded text-xs">
+        <div className="absolute top-3 left-3 glass-card px-3 py-1 rounded-full text-xs text-white font-medium">
           {currentIndex + 1} / {images.length}
         </div>
       </div>

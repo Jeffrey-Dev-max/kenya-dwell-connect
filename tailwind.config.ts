@@ -18,6 +18,9 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				'outfit': ['Outfit', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -77,14 +80,16 @@ export default {
 			},
 			backgroundImage: {
 				'gradient-sunset': 'var(--gradient-sunset)',
-				'gradient-savanna': 'var(--gradient-savanna)',
-				'gradient-forest': 'var(--gradient-forest)',
-				'gradient-hero': 'var(--gradient-hero)'
+				'gradient-ocean': 'var(--gradient-ocean)',
+				'gradient-aurora': 'var(--gradient-aurora)',
+				'gradient-hero': 'var(--gradient-hero)',
+				'gradient-glass': 'var(--gradient-glass)'
 			},
 			boxShadow: {
 				'soft': 'var(--shadow-soft)',
 				'medium': 'var(--shadow-medium)',
-				'strong': 'var(--shadow-strong)'
+				'strong': 'var(--shadow-strong)',
+				'glow': 'var(--shadow-glow)'
 			},
 			transitionTimingFunction: {
 				'smooth': 'var(--transition-smooth)',

@@ -18,18 +18,18 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-soft">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass-card backdrop-blur-xl border-b border-white/10 shadow-soft">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div 
-            className="flex items-center space-x-2 cursor-pointer"
+            className="flex items-center space-x-3 cursor-pointer group"
             onClick={() => navigate('/')}
           >
-            <div className="w-8 h-8 bg-gradient-hero rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-hero rounded-xl flex items-center justify-center shadow-medium group-hover:shadow-glow transition-all duration-300">
               <Home className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-foreground">
+            <span className="text-xl font-bold text-gradient">
               Kenya Dwell Connect
             </span>
           </div>
@@ -38,23 +38,23 @@ const Navigation = () => {
           <div className="hidden md:flex items-center space-x-8">
             <button 
               onClick={() => navigate('/properties')}
-              className="text-foreground hover:text-primary transition-colors"
+              className="text-foreground hover:text-primary transition-colors font-medium hover:scale-105 transform transition-transform duration-200"
             >
               Properties
             </button>
             <button 
               onClick={() => navigate('/properties?listing_mode=rent')}
-              className="text-foreground hover:text-primary transition-colors"
+              className="text-foreground hover:text-primary transition-colors font-medium hover:scale-105 transform transition-transform duration-200"
             >
               For Rent
             </button>
             <button 
               onClick={() => navigate('/properties?listing_mode=sale')}
-              className="text-foreground hover:text-primary transition-colors"
+              className="text-foreground hover:text-primary transition-colors font-medium hover:scale-105 transform transition-transform duration-200"
             >
               For Sale
             </button>
-            <a href="#about" className="text-foreground hover:text-primary transition-colors">
+            <a href="#about" className="text-foreground hover:text-primary transition-colors font-medium hover:scale-105 transform transition-transform duration-200">
               About
             </a>
           </div>
@@ -69,6 +69,7 @@ const Navigation = () => {
                   variant="ghost" 
                   size="sm"
                   onClick={() => navigate('/messages')}
+                  className="glass-card hover-glow"
                 >
                   <MessageCircle className="h-4 w-4 mr-2" />
                   Messages
@@ -79,6 +80,7 @@ const Navigation = () => {
                     variant="outline" 
                     size="sm"
                     onClick={() => navigate('/create-listing')}
+                    className="glass-card hover-glow border-primary/20"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     List Property
@@ -87,28 +89,28 @@ const Navigation = () => {
                 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full glass-card hover-glow">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email} />
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-gradient-hero text-white">
                           {user.email?.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                  <DropdownMenuContent className="w-56 glass-card backdrop-blur-xl" align="end" forceMount>
+                    <DropdownMenuItem onClick={() => navigate('/dashboard')} className="hover:bg-primary/10">
                       <User className="mr-2 h-4 w-4" />
                       Dashboard
                     </DropdownMenuItem>
                     {userRole === 'admin' && (
-                      <DropdownMenuItem onClick={() => navigate('/admin')}>
+                      <DropdownMenuItem onClick={() => navigate('/admin')} className="hover:bg-primary/10">
                         <Settings className="mr-2 h-4 w-4" />
                         Admin Panel
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
+                    <DropdownMenuItem onClick={handleSignOut} className="hover:bg-destructive/10 text-destructive">
                       Sign Out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -117,7 +119,7 @@ const Navigation = () => {
             ) : (
               <Button 
                 size="sm" 
-                className="bg-gradient-hero"
+                className="bg-gradient-hero hover-glow shadow-medium"
                 onClick={() => navigate('/auth')}
               >
                 <User className="h-4 w-4 mr-2" />
@@ -139,14 +141,14 @@ const Navigation = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border bg-background/95 backdrop-blur-sm">
+          <div className="md:hidden py-4 border-t border-white/10 glass-card backdrop-blur-xl">
             <div className="space-y-3">
               <button 
                 onClick={() => {
                   navigate('/properties');
                   setIsMenuOpen(false);
                 }}
-                className="block w-full text-left py-2 text-foreground hover:text-primary transition-colors"
+                className="block w-full text-left py-3 px-4 text-foreground hover:text-primary transition-colors font-medium rounded-lg hover:bg-primary/5"
               >
                 Properties
               </button>
@@ -155,7 +157,7 @@ const Navigation = () => {
                   navigate('/properties?listing_mode=rent');
                   setIsMenuOpen(false);
                 }}
-                className="block w-full text-left py-2 text-foreground hover:text-primary transition-colors"
+                className="block w-full text-left py-3 px-4 text-foreground hover:text-primary transition-colors font-medium rounded-lg hover:bg-primary/5"
               >
                 For Rent
               </button>
@@ -164,20 +166,20 @@ const Navigation = () => {
                   navigate('/properties?listing_mode=sale');
                   setIsMenuOpen(false);
                 }}
-                className="block w-full text-left py-2 text-foreground hover:text-primary transition-colors"
+                className="block w-full text-left py-3 px-4 text-foreground hover:text-primary transition-colors font-medium rounded-lg hover:bg-primary/5"
               >
                 For Sale
               </button>
-              <a href="#about" className="block py-2 text-foreground hover:text-primary transition-colors">
+              <a href="#about" className="block py-3 px-4 text-foreground hover:text-primary transition-colors font-medium rounded-lg hover:bg-primary/5">
                 About
               </a>
               
-              <div className="pt-4 space-y-2">
+              <div className="pt-4 space-y-3">
                 {user ? (
                   <>
                     <Button 
                       variant="outline" 
-                      className="w-full justify-start"
+                      className="w-full justify-start glass-card hover-glow"
                       onClick={() => {
                         navigate('/dashboard');
                         setIsMenuOpen(false);
@@ -188,7 +190,7 @@ const Navigation = () => {
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="w-full justify-start"
+                      className="w-full justify-start glass-card hover-glow"
                       onClick={() => {
                         navigate('/messages');
                         setIsMenuOpen(false);
@@ -200,7 +202,7 @@ const Navigation = () => {
                     {(userRole === 'homeowner' || userRole === 'caretaker') && (
                       <Button 
                         variant="outline" 
-                        className="w-full justify-start"
+                        className="w-full justify-start glass-card hover-glow"
                         onClick={() => {
                           navigate('/create-listing');
                           setIsMenuOpen(false);
@@ -213,7 +215,7 @@ const Navigation = () => {
                     {userRole === 'admin' && (
                       <Button 
                         variant="outline" 
-                        className="w-full justify-start"
+                        className="w-full justify-start glass-card hover-glow"
                         onClick={() => {
                           navigate('/admin');
                           setIsMenuOpen(false);
@@ -236,7 +238,7 @@ const Navigation = () => {
                   </>
                 ) : (
                   <Button 
-                    className="w-full justify-start bg-gradient-hero"
+                    className="w-full justify-start bg-gradient-hero hover-glow shadow-medium"
                     onClick={() => {
                       navigate('/auth');
                       setIsMenuOpen(false);

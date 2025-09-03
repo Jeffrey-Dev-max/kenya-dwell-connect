@@ -2,64 +2,71 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Kenya Dwell Connect Design System - Inspired by Kenyan landscape and culture */
+/* Elegant Modern Design System - Luxury Property Platform */
 
 @layer base {
   :root {
-    /* Kenya-inspired color palette */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 5%;
+    /* Modern elegant color palette */
+    --background: 240 100% 99%;
+    --foreground: 240 10% 12%;
 
-    /* Card and surface colors */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 5%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 5%;
+    /* Card and surface colors with glass effect */
+    --card: 240 100% 99%;
+    --card-foreground: 240 10% 12%;
+    --popover: 240 100% 99%;
+    --popover-foreground: 240 10% 12%;
 
-    /* Primary colors - Green nature palette */
-    --primary: 145 70% 45%; /* Rich forest green */
-    --primary-foreground: 0 0% 100%;
-    --primary-light: 145 60% 55%;
-    --primary-dark: 145 80% 35%;
+    /* Sophisticated primary colors */
+    --primary: 250 95% 65%; /* Elegant purple-blue */
+    --primary-foreground: 240 100% 99%;
+    --primary-light: 250 85% 75%;
+    --primary-dark: 250 95% 55%;
 
-    /* Secondary colors - Complementary earth tones */
-    --secondary: 120 50% 40%; /* Deep emerald */
-    --secondary-foreground: 0 0% 100%;
-    --secondary-light: 120 40% 50%;
+    /* Rich secondary colors */
+    --secondary: 280 85% 60%; /* Deep violet */
+    --secondary-foreground: 240 100% 99%;
+    --secondary-light: 280 75% 70%;
 
-    /* Accent colors - Natural accents */
-    --accent: 160 45% 50%; /* Sage green */
-    --accent-foreground: 0 0% 100%;
-    --accent-warm: 90 60% 45%; /* Olive green */
+    /* Accent colors - Luxurious tones */
+    --accent: 200 85% 65%; /* Ocean blue */
+    --accent-foreground: 240 100% 99%;
+    --accent-warm: 320 70% 65%; /* Rose gold */
 
-    /* Neutral tones - Inspired by Kenyan earth */
-    --muted: 30 10% 96%;
-    --muted-foreground: 30 5% 45%;
-    --border: 30 15% 88%;
-    --input: 30 15% 88%;
+    /* Refined neutral tones */
+    --muted: 240 20% 96%;
+    --muted-foreground: 240 10% 45%;
+    --border: 240 15% 92%;
+    --input: 240 15% 95%;
 
     /* Status colors */
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 0 0% 100%;
-    --success: 145 70% 45%;
-    --success-foreground: 0 0% 100%;
-    --warning: 45 85% 55%;
-    --warning-foreground: 0 0% 5%;
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 240 100% 99%;
+    --success: 140 70% 55%;
+    --success-foreground: 240 100% 99%;
+    --warning: 45 95% 65%;
+    --warning-foreground: 240 10% 12%;
 
     /* Interactive elements */
-    --ring: 145 70% 45%;
-    --radius: 0.75rem;
+    --ring: 250 95% 65%;
+    --radius: 1rem;
 
-    /* Gradients inspired by Kenyan landscapes */
-    --gradient-sunset: linear-gradient(135deg, hsl(90 60% 45%), hsl(120 50% 40%));
-    --gradient-savanna: linear-gradient(180deg, hsl(145 60% 55%), hsl(120 55% 40%));
-    --gradient-forest: linear-gradient(135deg, hsl(145 70% 45%), hsl(160 45% 50%));
-    --gradient-hero: linear-gradient(135deg, hsl(145 70% 45%), hsl(90 60% 45%));
+    /* Elegant gradient collection */
+    --gradient-sunset: linear-gradient(135deg, hsl(320 70% 65%), hsl(280 85% 60%));
+    --gradient-ocean: linear-gradient(135deg, hsl(200 85% 65%), hsl(250 95% 65%));
+    --gradient-aurora: linear-gradient(135deg, hsl(250 95% 65%), hsl(280 85% 60%), hsl(320 70% 65%));
+    --gradient-hero: linear-gradient(135deg, hsl(250 95% 65%), hsl(280 85% 60%));
+    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
 
-    /* Shadows with green tones */
-    --shadow-soft: 0 4px 20px -2px hsl(145 70% 45% / 0.1);
-    --shadow-medium: 0 8px 30px -4px hsl(145 70% 45% / 0.15);
-    --shadow-strong: 0 16px 40px -8px hsl(145 70% 45% / 0.2);
+    /* Sophisticated shadows */
+    --shadow-soft: 0 4px 20px -2px hsl(250 95% 65% / 0.08);
+    --shadow-medium: 0 8px 30px -4px hsl(250 95% 65% / 0.12);
+    --shadow-strong: 0 16px 40px -8px hsl(250 95% 65% / 0.16);
+    --shadow-glow: 0 0 40px hsl(250 95% 65% / 0.15);
+
+    /* Glass morphism effects */
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-backdrop: blur(20px);
 
     /* Animation variables */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -77,61 +84,86 @@
   }
 
   .dark {
-    --background: 145 25% 8%;
-    --foreground: 145 15% 95%;
+    --background: 240 15% 8%;
+    --foreground: 240 10% 95%;
 
-    --card: 145 25% 10%;
-    --card-foreground: 145 15% 95%;
+    --card: 240 20% 10%;
+    --card-foreground: 240 10% 95%;
 
-    --popover: 145 25% 10%;
-    --popover-foreground: 145 15% 95%;
+    --popover: 240 20% 10%;
+    --popover-foreground: 240 10% 95%;
 
-    --primary: 145 60% 65%;
-    --primary-foreground: 145 25% 8%;
-    --primary-light: 145 50% 70%;
-    --primary-dark: 145 70% 55%;
+    --primary: 250 95% 70%;
+    --primary-foreground: 240 15% 8%;
+    --primary-light: 250 85% 80%;
+    --primary-dark: 250 95% 60%;
 
-    --secondary: 120 45% 25%;
-    --secondary-foreground: 145 15% 95%;
-    --secondary-light: 120 35% 35%;
+    --secondary: 280 85% 65%;
+    --secondary-foreground: 240 15% 8%;
+    --secondary-light: 280 75% 75%;
 
-    --muted: 145 20% 15%;
-    --muted-foreground: 145 10% 70%;
+    --muted: 240 15% 15%;
+    --muted-foreground: 240 10% 70%;
 
-    --accent: 160 40% 35%;
-    --accent-foreground: 145 15% 95%;
-    --accent-warm: 90 50% 35%;
+    --accent: 200 85% 70%;
+    --accent-foreground: 240 15% 8%;
+    --accent-warm: 320 70% 70%;
 
-    --destructive: 0 65% 45%;
-    --destructive-foreground: 145 15% 95%;
+    --destructive: 0 85% 65%;
+    --destructive-foreground: 240 10% 95%;
 
-    --success: 145 60% 55%;
-    --success-foreground: 145 15% 95%;
+    --success: 140 70% 60%;
+    --success-foreground: 240 10% 95%;
 
-    --warning: 45 80% 50%;
-    --warning-foreground: 145 25% 8%;
+    --warning: 45 95% 70%;
+    --warning-foreground: 240 15% 8%;
 
-    --border: 145 20% 20%;
-    --input: 145 20% 20%;
-    --ring: 145 60% 65%;
+    --border: 240 15% 20%;
+    --input: 240 15% 18%;
+    --ring: 250 95% 70%;
 
-    --sidebar-background: 145 30% 6%;
-    --sidebar-foreground: 145 15% 95%;
-    --sidebar-primary: 145 60% 65%;
-    --sidebar-primary-foreground: 145 25% 8%;
-    --sidebar-accent: 145 25% 12%;
-    --sidebar-accent-foreground: 145 15% 95%;
-    --sidebar-border: 145 20% 20%;
-    --sidebar-ring: 145 60% 65%;
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.1);
+
+    --sidebar-background: 240 20% 6%;
+    --sidebar-foreground: 240 10% 95%;
+    --sidebar-primary: 250 95% 70%;
+    --sidebar-primary-foreground: 240 15% 8%;
+    --sidebar-accent: 240 20% 12%;
+    --sidebar-accent-foreground: 240 10% 95%;
+    --sidebar-border: 240 15% 20%;
+    --sidebar-ring: 250 95% 70%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border font-outfit;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-outfit;
+    background-image: radial-gradient(circle at 20% 50%, hsl(250 95% 65% / 0.05) 0%, transparent 50%),
+                      radial-gradient(circle at 80% 20%, hsl(280 85% 60% / 0.05) 0%, transparent 50%),
+                      radial-gradient(circle at 40% 80%, hsl(200 85% 65% / 0.05) 0%, transparent 50%);
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-soft;
+  }
+  
+  .glass-card-dark {
+    @apply dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10;
+  }
+  
+  .hover-glow {
+    @apply hover:shadow-glow transition-all duration-300;
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-aurora bg-clip-text text-transparent;
   }
 }
