@@ -47,11 +47,11 @@ const Properties = () => {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     search: "",
-    listing_mode: "",
-    property_type: "",
+    listing_mode: "all",
+    property_type: "all",
     min_price: "",
     max_price: "",
-    bedrooms: "",
+    bedrooms: "any",
     bathrooms: "",
     min_sqft: "",
     max_sqft: "",
@@ -96,10 +96,10 @@ const Properties = () => {
       if (filters.search) {
         query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%,address.ilike.%${filters.search}%,id.ilike.%${filters.search}%`);
       }
-      if (filters.property_type) {
+      if (filters.property_type && filters.property_type !== 'all') {
         query = query.eq('property_type', filters.property_type as any);
       }
-      if (filters.listing_mode) {
+      if (filters.listing_mode && filters.listing_mode !== 'all') {
         query = query.eq('listing_mode', filters.listing_mode as any);
       }
       if (filters.min_price) {
@@ -108,7 +108,7 @@ const Properties = () => {
       if (filters.max_price) {
         query = query.or(`rent_price.lte.${parseFloat(filters.max_price)},sale_price.lte.${parseFloat(filters.max_price)}`);
       }
-      if (filters.bedrooms) {
+      if (filters.bedrooms && filters.bedrooms !== 'any') {
         query = query.eq('bedrooms', parseInt(filters.bedrooms));
       }
       if (filters.location) {
@@ -168,7 +168,7 @@ const Properties = () => {
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="rent">For Rent</SelectItem>
                   <SelectItem value="sale">For Sale</SelectItem>
                 </SelectContent>
@@ -179,7 +179,7 @@ const Properties = () => {
                   <SelectValue placeholder="Property Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Properties</SelectItem>
+                  <SelectItem value="all">All Properties</SelectItem>
                   <SelectItem value="apartment">Apartment</SelectItem>
                   <SelectItem value="house">House</SelectItem>
                   <SelectItem value="studio">Studio</SelectItem>
@@ -218,7 +218,7 @@ const Properties = () => {
                   <SelectValue placeholder="Bedrooms" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any</SelectItem>
+                  <SelectItem value="any">Any</SelectItem>
                   <SelectItem value="1">1 Bedroom</SelectItem>
                   <SelectItem value="2">2 Bedrooms</SelectItem>
                   <SelectItem value="3">3 Bedrooms</SelectItem>
