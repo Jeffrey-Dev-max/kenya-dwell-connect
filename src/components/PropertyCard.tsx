@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Bed, Bath, Square } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { ImageCarousel } from "./ImageCarousel";
 
 interface Property {
@@ -21,15 +22,21 @@ interface Property {
 
 interface PropertyCardProps {
   property: Property;
-  onClick: () => void;
+  onClick?: () => void;
 }
 
 export const PropertyCard = ({ property, onClick }: PropertyCardProps) => {
+  const navigate = useNavigate();
   const price = property.listing_mode === 'rent' ? property.rent_price : property.sale_price;
   const priceLabel = property.listing_mode === 'rent' ? '/month' : '';
 
+  const handleCardClick = () => {
+    navigate(`/property/${property.id}`);
+    onClick?.();
+  };
+
   return (
-    <Card className="glass-card hover-glow cursor-pointer transition-all duration-300 hover:scale-105 overflow-hidden group" onClick={onClick}>
+    <Card className="glass-card hover-glow cursor-pointer transition-all duration-300 hover:scale-105 overflow-hidden group" onClick={handleCardClick}>
       <CardContent className="p-0">
         <div className="relative">
           <ImageCarousel 

@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Properties from "./pages/Properties";
+import PropertyDetails from "./pages/PropertyDetails";
 import CreateListing from "./pages/CreateListing";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/properties" element={<Properties />} />
+              <Route path="/property/:id" element={<PropertyDetails />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Dashboard />
