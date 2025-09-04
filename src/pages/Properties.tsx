@@ -87,8 +87,7 @@ const Properties = () => {
         .from('properties')
         .select(`
           *,
-          property_media(url, sort_order),
-          owner:profiles!owner_id(display_name, phone)
+          property_media(url, sort_order)
         `)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
