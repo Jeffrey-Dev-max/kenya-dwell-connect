@@ -87,6 +87,7 @@ const Properties = () => {
         .from('properties')
         .select(`
           *,
+          property_media(url, sort_order),
           owner:profiles!owner_id(display_name, phone)
         `)
         .eq('status', 'active')
@@ -273,7 +274,10 @@ const Properties = () => {
               {properties.map((property) => (
                 <PropertyCard 
                   key={property.id} 
-                  property={property} 
+                  property={{
+                    ...property,
+                    images: property.property_media?.map(media => media.url) || []
+                  }} 
                   onClick={() => console.log('Property clicked:', property.id)} 
                 />
               ))}
