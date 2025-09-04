@@ -54,9 +54,12 @@ const Navigation = () => {
             >
               For Sale
             </button>
-            <a href="#about" className="text-foreground hover:text-primary transition-colors font-medium hover:scale-105 transform transition-transform duration-200">
+            <button 
+              onClick={() => navigate('/#about')}
+              className="text-foreground hover:text-primary transition-colors font-medium hover:scale-105 transform transition-transform duration-200"
+            >
               About
-            </a>
+            </button>
           </div>
 
           {/* Desktop Actions */}
@@ -170,9 +173,15 @@ const Navigation = () => {
               >
                 For Sale
               </button>
-              <a href="#about" className="block py-3 px-4 text-foreground hover:text-primary transition-colors font-medium rounded-lg hover:bg-primary/5">
+              <button 
+                onClick={() => {
+                  navigate('/#about');
+                  setIsMenuOpen(false);
+                }}
+                className="block w-full text-left py-3 px-4 text-foreground hover:text-primary transition-colors font-medium rounded-lg hover:bg-primary/5"
+              >
                 About
-              </a>
+              </button>
               
               <div className="pt-4 space-y-3">
                 {user ? (
