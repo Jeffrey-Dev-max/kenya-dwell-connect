@@ -241,7 +241,6 @@ const Auth = () => {
                     <SelectContent>
                       <SelectItem value="tenant">Tenant (Looking for housing)</SelectItem>
                       <SelectItem value="homeowner">Homeowner (Property owner)</SelectItem>
-                      <SelectItem value="caretaker">Caretaker (Property manager)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

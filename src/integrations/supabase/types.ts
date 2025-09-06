@@ -726,6 +726,13 @@ export type Database = {
           used: number
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       reset_contact_period: {
         Args: { _user: string }
         Returns: undefined

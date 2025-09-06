@@ -78,7 +78,7 @@ const Navigation = () => {
                   Messages
                 </Button>
                 
-                {(userRole === 'homeowner' || userRole === 'caretaker') && (
+                {userRole === 'homeowner' && (
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -208,7 +208,7 @@ const Navigation = () => {
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Messages
                     </Button>
-                    {(userRole === 'homeowner' || userRole === 'caretaker') && (
+                    {userRole === 'homeowner' && (
                       <Button 
                         variant="outline" 
                         className="w-full justify-start glass-card hover-glow"

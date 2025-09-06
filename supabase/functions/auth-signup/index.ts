@@ -28,7 +28,7 @@ serve(async (req) => {
     }
 
     // Validate role
-    if (!['tenant', 'homeowner', 'caretaker'].includes(role)) {
+    if (!['tenant', 'homeowner'].includes(role)) {
       return new Response(
         JSON.stringify({ error: 'Invalid role' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -63,7 +63,7 @@ serve(async (req) => {
           id: authData.user.id,
           email,
           phone,
-          role: role as 'tenant' | 'homeowner' | 'caretaker',
+          role: role as 'tenant' | 'homeowner',
           full_name,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -73,8 +73,8 @@ serve(async (req) => {
         console.error('Profile creation error:', profileError)
       }
 
-      // Initialize first listing allowance for homeowners and caretakers
-      if (role === 'homeowner' || role === 'caretaker') {
+      // Initialize first listing allowance for homeowners
+      if (role === 'homeowner') {
         const { error: allowanceError } = await supabaseClient
           .from('listing_allowances')
           .insert({
