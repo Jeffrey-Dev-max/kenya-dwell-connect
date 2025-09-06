@@ -14,65 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      agencies: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          owner_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          owner_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          owner_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      agency_members: {
-        Row: {
-          agency_id: string
-          created_at: string
-          id: string
-          role: Database["public"]["Enums"]["member_role"]
-          user_id: string
-        }
-        Insert: {
-          agency_id: string
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["member_role"]
-          user_id: string
-        }
-        Update: {
-          agency_id?: string
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["member_role"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "agency_members_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       alerts: {
         Row: {
           created_at: string
@@ -444,7 +385,6 @@ export type Database = {
       properties: {
         Row: {
           address: string | null
-          agency_id: string | null
           area_sqft: number | null
           bathrooms: number | null
           bedrooms: number | null
@@ -472,7 +412,6 @@ export type Database = {
         }
         Insert: {
           address?: string | null
-          agency_id?: string | null
           area_sqft?: number | null
           bathrooms?: number | null
           bedrooms?: number | null
@@ -500,7 +439,6 @@ export type Database = {
         }
         Update: {
           address?: string | null
-          agency_id?: string | null
           area_sqft?: number | null
           bathrooms?: number | null
           bedrooms?: number | null
@@ -526,15 +464,7 @@ export type Database = {
           updated_at?: string
           what3words?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "properties_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       property_amenities: {
         Row: {
@@ -796,20 +726,13 @@ export type Database = {
           used: number
         }[]
       }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
       reset_contact_period: {
         Args: { _user: string }
         Returns: undefined
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "tenant" | "homeowner" | "admin"
       booking_status:
         | "pending"
         | "confirmed"
@@ -819,7 +742,6 @@ export type Database = {
       listing_mode: "rent" | "sale" | "rent_to_own"
       listing_status: "draft" | "active" | "paused" | "archived"
       media_type: "image" | "video"
-      member_role: "owner" | "admin" | "member"
       property_type:
         | "apartment"
         | "house"
@@ -963,7 +885,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["tenant", "homeowner", "admin"],
       booking_status: [
         "pending",
         "confirmed",
@@ -974,7 +896,6 @@ export const Constants = {
       listing_mode: ["rent", "sale", "rent_to_own"],
       listing_status: ["draft", "active", "paused", "archived"],
       media_type: ["image", "video"],
-      member_role: ["owner", "admin", "member"],
       property_type: [
         "apartment",
         "house",
